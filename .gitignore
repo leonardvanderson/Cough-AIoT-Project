@@ -4,7 +4,7 @@ files.txt
 
 # Datasets / audio
 edge_impulse_dataset/
-ESC-50/audio/
+# ESC-50/audio/
 public_dataset/
 
 # Python cache (if using Python)
