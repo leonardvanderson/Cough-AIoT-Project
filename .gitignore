@@ -1,0 +1,23 @@
+# VS Code
+.vscode/
+
+# Datasets / audio
+edge_impulse_dataset/
+ESC-50/audio/
+public_dataset/
+
+# Python cache (if using Python)
+__pycache__/
+*.py[cod]
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# OS files
+.DS_Store
+Thumbs.db
