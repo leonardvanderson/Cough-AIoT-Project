@@ -1,5 +1,6 @@
 # VS Code
 .vscode/
+files.txt
 
 # Datasets / audio
 edge_impulse_dataset/
