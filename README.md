@@ -50,5 +50,18 @@ Data dikirim dari ESP32 ke cloud dalam format JSON berikut:
   "symptom": "cough",
   "confidence": 0.95
 }
+## 🔗 Tautan Penting
+* 🖥️ **Live Dashboard UI:** [Buka Node-RED Dashboard](https://cough-aiot-project.onrender.com/dashboard/page2)
+* ⚙️ **Node-RED Flow Editor:** [Buka Flow Editor](https://cough-aiot-project.onrender.com/#flow/cea766101cfe7747)
+* 🎥 **Video Demo:** [Tonton di Google Drive](#) *(Ganti tanda # dengan link asli video Anda)*
 
+---
+
+## 👥 Anggota Kelompok (Group 10 - LA08)
+
+| Nama | NIM |
+| :--- | :--- |
+| **Tandri Wibowo** | 2702261681 |
+| **Kenneth Andrew Lukita** | 2702247310 |
+| **Leonard Vanderson Gani** | 2702264563 |
 
