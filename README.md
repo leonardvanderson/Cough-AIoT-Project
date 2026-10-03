@@ -50,6 +50,8 @@ Data dikirim dari ESP32 ke cloud dalam format JSON berikut:
   "symptom": "cough",
   "confidence": 0.95
 }
+
+```
 ## 🔗 Tautan Penting
 * 🖥️ **Live Dashboard UI:** [Buka Node-RED Dashboard](https://cough-aiot-project.onrender.com/dashboard/page2)
 * ⚙️ **Node-RED Flow Editor:** [Buka Flow Editor](https://cough-aiot-project.onrender.com/#flow/cea766101cfe7747)
