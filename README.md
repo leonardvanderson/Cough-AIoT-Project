@@ -36,7 +36,7 @@ Proyek ini merupakan sistem pemantau kesehatan jarak jauh berbasis IoT (*Interne
 * 🧠 **Edge Impulse AI Pipeline:** Ekstraksi fitur MFCC & pelatihan model 1D CNN (Akurasi $\ge$ 85%, Kuantisasi INT8 untuk efisiensi RAM ESP32).
 * ☁️ **MQTT Broker:** EMQX Cloud (`mqtts://va00e289.ala.asia-southeast1.emqxsl.com:8883`)
 * 🗄️ **Database Cloud:** InfluxDB Cloud (Bucket: `patient_data`, Org ID: `35a50f0f8db3c242`)
-* 🌐 **Backend & Dashboard:** Node-RED Engine
+* 🌐 **Backend & Dashboard:** Node-RED Engine and Render Web Service
 
 ---
 
