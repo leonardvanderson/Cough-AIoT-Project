@@ -55,7 +55,7 @@ Data dikirim dari ESP32 ke cloud dalam format JSON berikut:
 ## 🔗 Tautan Penting
 * 🖥️ **Live Dashboard UI:** [Buka Node-RED Dashboard](https://cough-aiot-project.onrender.com/dashboard/page2)
 * ⚙️ **Node-RED Flow Editor:** [Buka Flow Editor](https://cough-aiot-project.onrender.com/#flow/cea766101cfe7747)
-* 🎥 **Video Demo:** [Tonton di Google Drive](#) *(Ganti tanda # dengan link asli video Anda)*
+* 🎥 **Video Demo:** [Tonton di Google Drive](https://drive.google.com/file/d/1uvlVrptck8dT_ZKZyWGNqyluf0FuleyM/view?usp=sharing)
 
 ---
 
