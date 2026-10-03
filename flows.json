@@ -1164,7 +1164,7 @@
     {
         "id": "408cc9cbf6992a1d",
         "type": "global-config",
-        "env": [],
+        "env": [INFLUX_TOKEN, MQTT_USER, MQTT_PASS],
         "modules": {
             "@flowfuse/node-red-dashboard": "1.32.0",
             "node-red-contrib-influxdb": "0.7.0"
