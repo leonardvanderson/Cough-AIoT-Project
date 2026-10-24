@@ -1,6 +1,6 @@
 [
     {
-        "id": "cea766101cfe7747",
+        "id": "64ab3de8b366f712",
         "type": "tab",
         "label": "Flow 1",
         "disabled": false,
@@ -8,9 +8,9 @@
         "env": []
     },
     {
-        "id": "234fe7d67bb1d3ac",
+        "id": "1c03aa0c1084aafb",
         "type": "mqtt in",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "name": "",
         "topic": "hospital/room1/patient_sensor",
         "qos": "2",
@@ -24,17 +24,62 @@
         "y": 280,
         "wires": [
             [
-                "5ed68bf677470157",
-                "5fc04d1b3a515076",
-                "2a127b43aa4be10b",
-                "2b3fdf9a5129e9cf"
+                "043c7e6e059a3dd4",
+                "f66c75fa1c0d9c54",
+                "87cd42b1674aa7fc",
+                "eb9e5569c4291620",
+                "2f4fb31bab8bde17"
             ]
         ]
     },
     {
-        "id": "2a30364593c3b6e2",
+        "id": "2f4fb31bab8bde17",
+        "type": "function",
+        "z": "64ab3de8b366f712",
+        "name": "Check Room Environment",
+        "func": "let rTemp = Number(msg.payload.room_temp_c || 25.0);\nlet hum = Number(msg.payload.humidity_pct || 50.0);\n\nif (hum >= 70) {\n    msg.payload = `⚠️ <b>Udara Terlalu Lembap</b> (${hum}% | ${rTemp}°C). Memicu bersin/jamur! <a href=\"https://www.tokopedia.com/find/dehumidifier\" target=\"_blank\" style=\"color: #007bff; text-decoration: underline;\">Nyalakan Dehumidifier/AC</a>`;\n} else if (hum <= 40) {\n    msg.payload = `⚠️ <b>Udara Terlalu Kering</b> (${hum}% | ${rTemp}°C). Memicu batuk kering! <a href=\"https://www.tokopedia.com/find/humidifier\" target=\"_blank\" style=\"color: #007bff; text-decoration: underline;\">Nyalakan Humidifier</a>`;\n} else if (rTemp < 20) {\n    msg.payload = `🥶 <b>Kamar Terlalu Dingin</b> (${rTemp}°C | ${hum}%). Naikkan suhu AC ruangan.`;\n} else {\n    msg.payload = `✅ Kamar Ideal (${rTemp}°C | Kelembapan: ${hum}%)`;\n}\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 430,
+        "y": 240,
+        "wires": [
+            [
+                "8979454bb12b7668"
+            ]
+        ]
+    },
+    {
+        "id": "8979454bb12b7668",
+        "type": "ui-text",
+        "z": "64ab3de8b366f712",
+        "group": "2686faac98d7b0cf",
+        "order": 4,
+        "width": 0,
+        "height": 0,
+        "name": "Room Environment Text",
+        "label": "Room Environment (DHT22)",
+        "format": "{{msg.payload}}",
+        "layout": "col-center",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#717171",
+        "wrapText": true,
+        "className": "",
+        "value": "payload",
+        "valueType": "msg",
+        "x": 850,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "2ccc1e0c2fbf2c00",
         "type": "inject",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "name": "Inject patient sensor",
         "props": [
             {
@@ -50,20 +95,20 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "hospital/room1/patient_sensor",
-        "payload": "{\"device_id\":\"patient_01\",\"temperature_c\":37.8,\"symptom\":\"sneeze\",\"confidence\":0.99,\"timestamp\":1727915000}",
+        "payload": "{\"device_id\":\"patient_01\",\"temperature_c\":37.8,\"room_temp_c\":24.5,\"humidity_pct\":75.0,\"symptom\":\"sneeze\",\"confidence\":0.99,\"timestamp\":1727915000}",
         "payloadType": "json",
         "x": 410,
         "y": 640,
         "wires": [
             [
-                "1cbb08e2b948960b"
+                "147ddaf3d49b4425"
             ]
         ]
     },
     {
-        "id": "1cbb08e2b948960b",
+        "id": "147ddaf3d49b4425",
         "type": "mqtt out",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "name": "",
         "topic": "hospital/room1/patient_sensor",
         "qos": "",
@@ -79,9 +124,9 @@
         "wires": []
     },
     {
-        "id": "5c1f6501507365c2",
+        "id": "55ae487e4484aac6",
         "type": "debug",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "name": "debug 1",
         "active": true,
         "tosidebar": true,
@@ -95,9 +140,9 @@
         "wires": []
     },
     {
-        "id": "5ed68bf677470157",
+        "id": "043c7e6e059a3dd4",
         "type": "switch",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "name": "Check Fever",
         "property": "payload.temperature_c",
         "propertyType": "msg",
@@ -118,17 +163,17 @@
         "y": 300,
         "wires": [
             [
-                "2a906f17e351f1cd"
+                "2a68ec51a93de482"
             ],
             [
-                "69aaf8a329d92e13"
+                "d7001ad2c5359c55"
             ]
         ]
     },
     {
-        "id": "2a906f17e351f1cd",
+        "id": "2a68ec51a93de482",
         "type": "template",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "name": "Fever Alert",
         "field": "payload",
         "fieldType": "msg",
@@ -140,14 +185,14 @@
         "y": 300,
         "wires": [
             [
-                "4bf4213ef20156ba"
+                "75ef045783f8baa4"
             ]
         ]
     },
     {
-        "id": "4bf4213ef20156ba",
+        "id": "75ef045783f8baa4",
         "type": "ui-text",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "group": "2686faac98d7b0cf",
         "order": 3,
         "width": 0,
@@ -169,9 +214,9 @@
         "wires": []
     },
     {
-        "id": "3bf7a82be2a03ca9",
+        "id": "af0a812fd4f6c906",
         "type": "ui-text",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "group": "2686faac98d7b0cf",
         "order": 2,
         "width": 0,
@@ -193,11 +238,11 @@
         "wires": []
     },
     {
-        "id": "5fc04d1b3a515076",
+        "id": "f66c75fa1c0d9c54",
         "type": "function",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "name": "Insert payload and time",
-        "func": "// Force the metrics to be strict Numbers (InfluxDB will reject strings)\nlet safeTemp = Number(msg.payload.temperature_c);\nlet safeConf = Number(msg.payload.confidence);\nlet safeSymptom = msg.payload.symptom || \"unknown\";\n\n// Format for InfluxDB: [ {fields}, {tags} ]\nmsg.payload = [{\n    temperature: safeTemp, \n    confidence: safeConf\n},\n{\n    symptom: safeSymptom\n}];\n\nreturn msg;",
+        "func": "let safeTemp = Number(msg.payload.temperature_c);\nlet safeRoomTemp = Number(msg.payload.room_temp_c || 25.0);\nlet safeHum = Number(msg.payload.humidity_pct || 50.0);\nlet safeConf = Number(msg.payload.confidence);\nlet safeSymptom = msg.payload.symptom || \"unknown\";\n\n// Format for InfluxDB: [ {fields}, {tags} ]\nmsg.payload = [{\n    temperature: safeTemp,\n    room_temperature: safeRoomTemp,\n    humidity: safeHum,\n    confidence: safeConf\n},\n{\n    symptom: safeSymptom\n}];\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -205,17 +250,17 @@
         "finalize": "",
         "libs": [],
         "x": 430,
-        "y": 100,
+        "y": 80,
         "wires": [
             [
-                "1dd57d62b77758ee"
+                "56a8eaed64987f2d"
             ]
         ]
     },
     {
-        "id": "98c8bb479046c10a",
+        "id": "6d8f93ee89ebab4c",
         "type": "inject",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "name": "",
         "props": [
             {
@@ -237,14 +282,14 @@
         "y": 560,
         "wires": [
             [
-                "bfb0a34c31b6aef2"
+                "5053df8d2513f041"
             ]
         ]
     },
     {
-        "id": "bdd6db1e8c581bae",
+        "id": "bc2b699a3e3a223c",
         "type": "switch",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "name": "Check 3 days",
         "property": "payload[0].duration_seconds",
         "propertyType": "msg",
@@ -265,17 +310,17 @@
         "y": 740,
         "wires": [
             [
-                "be2eca72d598d7fa"
+                "46afde5823d492e3"
             ],
             [
-                "693550f2b41c3924"
+                "6ca8063d0b5be0b8"
             ]
         ]
     },
     {
-        "id": "149212104a990172",
+        "id": "7fff33f25a07adce",
         "type": "ui-text",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "group": "2686faac98d7b0cf",
         "order": 1,
         "width": 0,
@@ -297,9 +342,9 @@
         "wires": []
     },
     {
-        "id": "63e7daafab15487c",
+        "id": "0b1d576d4ace19f1",
         "type": "template",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "name": "Alert 3 days",
         "field": "payload",
         "fieldType": "msg",
@@ -311,14 +356,14 @@
         "y": 760,
         "wires": [
             [
-                "149212104a990172"
+                "7fff33f25a07adce"
             ]
         ]
     },
     {
-        "id": "be2eca72d598d7fa",
+        "id": "46afde5823d492e3",
         "type": "change",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "name": "",
         "rules": [
             {
@@ -338,18 +383,18 @@
         "y": 720,
         "wires": [
             [
-                "63e7daafab15487c"
+                "0b1d576d4ace19f1"
             ]
         ]
     },
     {
-        "id": "06f057d71c52c73a",
+        "id": "9a94142a20450da5",
         "type": "ui-chart",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "group": "c5400a95a70b734c",
         "name": "Live Temperature History",
         "label": "Live Temperature History",
-        "order": 1,
+        "order": 2,
         "chartType": "line",
         "category": "topic",
         "categoryType": "msg",
@@ -405,9 +450,9 @@
         ]
     },
     {
-        "id": "2a127b43aa4be10b",
+        "id": "87cd42b1674aa7fc",
         "type": "change",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "name": "",
         "rules": [
             {
@@ -427,14 +472,14 @@
         "y": 520,
         "wires": [
             [
-                "06f057d71c52c73a"
+                "9a94142a20450da5"
             ]
         ]
     },
     {
-        "id": "69aaf8a329d92e13",
+        "id": "d7001ad2c5359c55",
         "type": "template",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "name": "Normal Temp",
         "field": "payload",
         "fieldType": "msg",
@@ -446,14 +491,14 @@
         "y": 360,
         "wires": [
             [
-                "4bf4213ef20156ba"
+                "75ef045783f8baa4"
             ]
         ]
     },
     {
-        "id": "693550f2b41c3924",
+        "id": "6ca8063d0b5be0b8",
         "type": "change",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "name": "",
         "rules": [
             {
@@ -473,14 +518,14 @@
         "y": 800,
         "wires": [
             [
-                "149212104a990172"
+                "7fff33f25a07adce"
             ]
         ]
     },
     {
-        "id": "05230b7536cb6e79",
+        "id": "af507b93463c5086",
         "type": "inject",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "name": "Get Daily Cough and Sneeze",
         "props": [
             {
@@ -502,14 +547,14 @@
         "y": 800,
         "wires": [
             [
-                "40ead6c4cdf2c790"
+                "44e06a143256931b"
             ]
         ]
     },
     {
-        "id": "a5101e779a985d92",
+        "id": "b4819f184f4ccce0",
         "type": "function",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "name": "Format Data for Chart",
         "func": "let messages = [];\n\nfor (let i = 0; i < msg.payload.length; i++) {\n    let row = msg.payload[i];\n    // InfluxDB returns the time as an ISO string in row.day\n    let dateObj = new Date(row.day);\n    \n    messages.push({\n        payload: row._value,           \n        topic: row.symptom,           \n        timestamp: dateObj.toLocaleDateString()    \n    });\n}\n\n// Sort chronologically\nmessages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());\n\nreturn [messages];",
         "outputs": 1,
@@ -522,18 +567,18 @@
         "y": 920,
         "wires": [
             [
-                "4c09aacd9407f219"
+                "96af5f92dce8cc5c"
             ]
         ]
     },
     {
-        "id": "4c09aacd9407f219",
+        "id": "96af5f92dce8cc5c",
         "type": "ui-chart",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "group": "c5400a95a70b734c",
         "name": "Daily Cough & Sneeze Count",
         "label": "Daily Cough & Sneeze Count",
-        "order": 2,
+        "order": 3,
         "chartType": "bar",
         "category": "topic",
         "categoryType": "msg",
@@ -589,9 +634,9 @@
         ]
     },
     {
-        "id": "8fcf41b7392060f1",
+        "id": "fd6a2cfcecea2542",
         "type": "inject",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "name": "Add previous dates 1",
         "props": [
             {
@@ -610,17 +655,17 @@
         "payload": "",
         "payloadType": "date",
         "x": 480,
-        "y": 160,
+        "y": 140,
         "wires": [
             [
-                "962f8a10ba7af452"
+                "19057435fbf56309"
             ]
         ]
     },
     {
-        "id": "4b3a7c0a7c0f19ee",
+        "id": "12973ae5787a1449",
         "type": "inject",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "name": "Add previous dates 2",
         "props": [
             {
@@ -639,17 +684,17 @@
         "payload": "",
         "payloadType": "date",
         "x": 480,
-        "y": 220,
+        "y": 200,
         "wires": [
             [
-                "03bb35f2a84c95f3"
+                "3a57ff42df71fe91"
             ]
         ]
     },
     {
-        "id": "1553998c34d97582",
+        "id": "b64dabf69ba8d233",
         "type": "inject",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "name": "Inject line threshold",
         "props": [
             {
@@ -671,14 +716,14 @@
         "y": 580,
         "wires": [
             [
-                "c2f69663fc074a45"
+                "c853cb5acba173e5"
             ]
         ]
     },
     {
-        "id": "c2f69663fc074a45",
+        "id": "c853cb5acba173e5",
         "type": "change",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "name": "",
         "rules": [
             {
@@ -705,14 +750,14 @@
         "y": 580,
         "wires": [
             [
-                "06f057d71c52c73a"
+                "9a94142a20450da5"
             ]
         ]
     },
     {
-        "id": "64af3b12b4dcbedc",
+        "id": "517dab8a597f68b9",
         "type": "inject",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "name": "Get Logs",
         "props": [
             {
@@ -734,18 +779,18 @@
         "y": 1020,
         "wires": [
             [
-                "248d223ac2c8dff3"
+                "2fef2a1654400c3e"
             ]
         ]
     },
     {
-        "id": "9f327fe11eb042a4",
+        "id": "47870187f0994f45",
         "type": "ui-table",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "group": "c5400a95a70b734c",
         "name": "Raw Patient Log",
         "label": "Raw Patient Log",
-        "order": 0,
+        "order": 1,
         "width": "6",
         "height": "6",
         "maxrows": 0,
@@ -766,9 +811,9 @@
         ]
     },
     {
-        "id": "1b8438e3b963117f",
+        "id": "46f261c66354f468",
         "type": "function",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "name": "Check Symptom And Display",
         "func": "const COUGH_LIMIT = 5;\nconst SNEEZE_LIMIT = 5;\nlet coughCount = 0;\nlet sneezeCount = 0;\n\n// Count today's history from the InfluxDB query\nfor (let i = 0; i < msg.payload.length; i++) {\n    if (msg.payload[i].symptom === 'cough') coughCount = msg.payload[i]._value;\n    if (msg.payload[i].symptom === 'sneeze') sneezeCount = msg.payload[i]._value;\n}\n\nlet activeAlerts = [];\n\n// Evaluate Cough Status\nif (coughCount >= COUGH_LIMIT) {\n    activeAlerts.push(`⚠️ <b>In-sick Cough</b> (${coughCount}x batuk hari ini). <a href='https://www.halodoc.com/obat-dan-vitamin' target='_blank'>💊 Beli Obat Batuk</a>`);\n} else if (coughCount > 0) {\n    activeAlerts.push(`🤧 <b>Occurrence Cough</b> (${coughCount}/${COUGH_LIMIT} menuju batas sakit).`);\n}\n\n// Evaluate Sneeze Status\nif (sneezeCount >= SNEEZE_LIMIT) {\n    activeAlerts.push(`⚠️ <b>In-sick Sneeze</b> (${sneezeCount}x bersin hari ini). <a href='https://www.halodoc.com/obat-dan-vitamin' target='_blank'>💊 Beli Obat Flu</a>`);\n} else if (sneezeCount > 0) {\n    activeAlerts.push(`🤧 <b>Occurrence Sneeze</b> (${sneezeCount}/${SNEEZE_LIMIT} menuju batas sakit).`);\n}\n\n// Format Output\nif (activeAlerts.length === 0) {\n    msg.payload = \"✅ Not-sick: Tidak ada gejala pernapasan.\";\n} else {\n    // Join multiple alerts with a line break so they stack neatly\n    msg.payload = activeAlerts.join(\"<br><br>\"); \n}\n\nreturn msg;",
         "outputs": 1,
@@ -781,14 +826,14 @@
         "y": 420,
         "wires": [
             [
-                "3bf7a82be2a03ca9"
+                "af0a812fd4f6c906"
             ]
         ]
     },
     {
-        "id": "fa672a16985b99d4",
+        "id": "053f5e15db1056f8",
         "type": "inject",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "name": "Inject threshold cough and sneeze",
         "props": [
             {
@@ -810,14 +855,14 @@
         "y": 940,
         "wires": [
             [
-                "cebf1bc7b32b9eb5"
+                "fbf5442b66d6459b"
             ]
         ]
     },
     {
-        "id": "cebf1bc7b32b9eb5",
+        "id": "fbf5442b66d6459b",
         "type": "change",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "name": "",
         "rules": [
             {
@@ -837,14 +882,14 @@
         "y": 980,
         "wires": [
             [
-                "4c09aacd9407f219"
+                "96af5f92dce8cc5c"
             ]
         ]
     },
     {
-        "id": "1dd57d62b77758ee",
+        "id": "56a8eaed64987f2d",
         "type": "influxdb out",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "influxdb": "0fec3fa235abb10c",
         "name": "",
         "measurement": "vitals",
@@ -860,12 +905,12 @@
         "wires": []
     },
     {
-        "id": "2b3fdf9a5129e9cf",
+        "id": "eb9e5569c4291620",
         "type": "influxdb in",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "influxdb": "0fec3fa235abb10c",
         "name": "",
-        "query": "from(bucket: \"patient_data\")\n  |> range(start: today())\n  |> filter(fn: (r) => r[\"_measurement\"] == \"vitals\")\n  |> filter(fn: (r) => r[\"symptom\"] == \"cough\" or r[\"symptom\"] == \"sneeze\")\n  |> group(columns: [\"symptom\"])\n  |> count(column: \"_value\")",
+        "query": "from(bucket: \"patient_data\")\n  |> range(start: today())\n  |> filter(fn: (r) => r[\"_measurement\"] == \"vitals\")\n  |> filter(fn: (r) => r[\"_field\"] == \"temperature\")\n  |> filter(fn: (r) => r[\"symptom\"] == \"cough\" or r[\"symptom\"] == \"sneeze\")\n  |> group(columns: [\"symptom\"])\n  |> count(column: \"_value\")",
         "rawOutput": false,
         "precision": "",
         "retentionPolicy": "",
@@ -874,17 +919,17 @@
         "y": 420,
         "wires": [
             [
-                "1b8438e3b963117f"
+                "46f261c66354f468"
             ]
         ]
     },
     {
-        "id": "40ead6c4cdf2c790",
+        "id": "44e06a143256931b",
         "type": "influxdb in",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "influxdb": "0fec3fa235abb10c",
         "name": "",
-        "query": "import \"timezone\"\noption location = timezone.location(name: \"Asia/Jakarta\")\n\nfrom(bucket: \"patient_data\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"vitals\")\n  |> filter(fn: (r) => r[\"symptom\"] == \"cough\" or r[\"symptom\"] == \"sneeze\")\n  // Added timeSrc: \"_start\" so it labels the bar with the correct day\n  |> aggregateWindow(every: 1d, fn: count, timeSrc: \"_start\", createEmpty: false) \n  |> duplicate(column: \"_time\", as: \"day\")",
+        "query": "import \"timezone\"\noption location = timezone.location(name: \"Asia/Jakarta\")\n\nfrom(bucket: \"patient_data\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"vitals\")\n  |> filter(fn: (r) => r[\"_field\"] == \"temperature\")\n  |> filter(fn: (r) => r[\"symptom\"] == \"cough\" or r[\"symptom\"] == \"sneeze\")\n  |> aggregateWindow(every: 1d, fn: count, timeSrc: \"_start\", createEmpty: false) \n  |> duplicate(column: \"_time\", as: \"day\")",
         "rawOutput": false,
         "precision": "",
         "retentionPolicy": "",
@@ -893,14 +938,14 @@
         "y": 860,
         "wires": [
             [
-                "a5101e779a985d92"
+                "b4819f184f4ccce0"
             ]
         ]
     },
     {
-        "id": "248d223ac2c8dff3",
+        "id": "2fef2a1654400c3e",
         "type": "influxdb in",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "influxdb": "0fec3fa235abb10c",
         "name": "",
         "query": "from(bucket: \"patient_data\")\n  |> range(start: -1d)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"vitals\")\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> sort(columns: [\"_time\"], desc: true)\n  |> limit(n: 50)\n  |> drop(columns: [\"_start\", \"_stop\", \"_measurement\", \"result\", \"table\"])",
@@ -912,14 +957,14 @@
         "y": 1020,
         "wires": [
             [
-                "9f327fe11eb042a4"
+                "47870187f0994f45"
             ]
         ]
     },
     {
-        "id": "bfb0a34c31b6aef2",
+        "id": "5053df8d2513f041",
         "type": "influxdb in",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "influxdb": "0fec3fa235abb10c",
         "name": "",
         "query": "from(bucket: \"patient_data\")\n  |> range(start: 0) // Look at all historical data\n  |> filter(fn: (r) => r[\"_measurement\"] == \"vitals\")\n  // Added this line to prevent data type collisions!\n  |> filter(fn: (r) => r[\"_field\"] == \"confidence\") \n  |> group() // Group all records together\n  // Find the minimum (first) and maximum (last) timestamps\n  |> reduce(\n      fn: (r, accumulator) => ({\n        minTime: if accumulator.minTime == 0 then int(v: r._time) else if int(v: r._time) < accumulator.minTime then int(v: r._time) else accumulator.minTime,\n        maxTime: if int(v: r._time) > accumulator.maxTime then int(v: r._time) else accumulator.maxTime\n      }),\n      identity: {minTime: 0, maxTime: 0}\n    )\n  // Calculate the duration in seconds\n  |> map(fn: (r) => ({\n      duration_seconds: (r.maxTime - r.minTime) / 1000000000 // Convert nanoseconds to seconds\n    }))",
@@ -931,47 +976,47 @@
         "y": 660,
         "wires": [
             [
-                "bdd6db1e8c581bae"
+                "bc2b699a3e3a223c"
             ]
         ]
     },
     {
-        "id": "962f8a10ba7af452",
+        "id": "19057435fbf56309",
         "type": "function",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "name": "Make previous date 1 payload",
-        "func": "// Calculate exactly 1 day ago\nlet yesterday = new Date(Date.now() - (24 * 60 * 60 * 1000));\n\n// By defining measurement, fields, and tags explicitly, \n// the node is forced to accept our custom timestamp.\nmsg.payload = [{\n    measurement: \"vitals\",\n    fields: { temperature: 38.0, confidence: 0.9 },\n    tags: { symptom: \"cough\" },\n    timestamp: yesterday\n}];\n\nreturn msg;",
+        "func": "// Calculate exactly 1 day ago\nlet yesterday = new Date(Date.now() - (24 * 60 * 60 * 1000));\n\nmsg.payload = [{\n    measurement: \"vitals\",\n    fields: { temperature: 38.0, room_temperature: 25.0, humidity: 60.0, confidence: 0.9 },\n    tags: { symptom: \"cough\" },\n    timestamp: yesterday\n}];\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 770,
-        "y": 160,
+        "x": 750,
+        "y": 140,
         "wires": [
             [
-                "1dd57d62b77758ee"
+                "56a8eaed64987f2d"
             ]
         ]
     },
     {
-        "id": "03bb35f2a84c95f3",
+        "id": "3a57ff42df71fe91",
         "type": "function",
-        "z": "cea766101cfe7747",
+        "z": "64ab3de8b366f712",
         "name": "Make previous date 2 payload",
-        "func": "// Calculate exactly 2 days ago\nlet twoDaysAgo = new Date(Date.now() - (48 * 60 * 60 * 1000));\n\nmsg.payload = [{\n    measurement: \"vitals\",\n    fields: { temperature: 37.0, confidence: 0.9 },\n    tags: { symptom: \"sneeze\" },\n    timestamp: twoDaysAgo\n}];\n\nreturn msg;",
+        "func": "// Calculate exactly 2 days ago\nlet twoDaysAgo = new Date(Date.now() - (48 * 60 * 60 * 1000));\n\nmsg.payload = [{\n    measurement: \"vitals\",\n    fields: { temperature: 37.0, room_temperature: 24.5, humidity: 55.0, confidence: 0.9 },\n    tags: { symptom: \"sneeze\" },\n    timestamp: twoDaysAgo\n}];\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 770,
-        "y": 220,
+        "x": 750,
+        "y": 200,
         "wires": [
             [
-                "1dd57d62b77758ee"
+                "56a8eaed64987f2d"
             ]
         ]
     },
@@ -1162,7 +1207,7 @@
         }
     },
     {
-        "id": "408cc9cbf6992a1d",
+        "id": "e4e3e9ad2e12091a",
         "type": "global-config",
         "env": [],
         "modules": {
