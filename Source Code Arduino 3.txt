@@ -1,0 +1,150 @@
+#include <WiFi.h>
+#include <WiFiClientSecure.h>
+#include <PubSubClient.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#include <DHT.h>
+#include <ArduinoJson.h>
+
+// --- WiFi Credentials ---
+const char* ssid = "(WiFi Name)";      // CHANGE THIS
+const char* password = "(WiFi Password)"; // CHANGE THIS
+
+// --- MQTT Credentials ---
+const char* mqtt_server = "va00e289.ala.asia-southeast1.emqxsl.com";
+const int mqtt_port = 8883;
+const char* mqtt_user = "cough";
+const char* mqtt_pass = "cough123";
+const char* mqtt_topic = "hospital/room1/patient_sensor";
+
+// --- DS18B20 Setup (Pin D4) ---
+const int oneWireBus = 4; // Yellow wire connected to D4
+OneWire oneWire(oneWireBus);
+DallasTemperature sensors(&oneWire);
+
+// --- DHT22 Setup (Pin D5) ---
+#define DHTPIN 5
+#define DHTTYPE DHT22
+DHT dht(DHTPIN, DHTTYPE);
+
+// --- MQTT Objects ---
+WiFiClientSecure espClient;
+PubSubClient client(espClient);
+
+// Timer for sending data
+unsigned long lastMsg = 0;
+const long interval = 5000; // Send data every 5 seconds
+
+void setup_wifi() {
+  delay(10);
+  Serial.println();
+  Serial.print("Connecting to WiFi: ");
+  Serial.println(ssid);
+  WiFi.mode(WIFI_STA); // Force it to act as a client, not a router
+  WiFi.disconnect();   // Disconnect from any old, saved connections
+  delay(100);  
+  WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(WiFi.status());
+    Serial.print(".\n");
+  }
+  Serial.println("\nWiFi connected!");
+}
+
+void reconnect() {
+  while (!client.connected()) {
+    Serial.print("Attempting MQTT connection...");
+    // Create a random client ID
+    String clientId = "ESP32Client-";
+    clientId += String(random(0xffff), HEX);
+    
+    // Attempt to connect
+    if (client.connect(clientId.c_str(), mqtt_user, mqtt_pass)) {
+      Serial.println("Connected to EMQX Broker!");
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" try again in 5 seconds");
+      delay(5000);
+    }
+  }
+}
+
+void setup() {
+  Serial.begin(115200);
+  
+  // Turn on the internal pull-up resistor for DS18B20 (D4) and DHT22 (D5)
+  pinMode(oneWireBus, INPUT_PULLUP);
+  sensors.begin();
+
+  pinMode(DHTPIN, INPUT_PULLUP);
+  dht.begin();
+
+  setup_wifi();
+  
+  // Port 8883 requires a secure connection. This tells the ESP32 to 
+  // skip checking the SSL certificate to make things simple.
+  espClient.setInsecure(); 
+  
+  client.setServer(mqtt_server, mqtt_port);
+}
+
+void loop() {
+  if (!client.connected()) {
+    reconnect();
+  }
+  client.loop();
+
+  unsigned long now = millis();
+  if (now - lastMsg > interval) {
+    lastMsg = now;
+
+    // 1. Read Patient Body Temperature (DS18B20)
+    sensors.requestTemperatures(); 
+    float tempC = sensors.getTempCByIndex(0);
+
+    // 2. Read Room Temperature & Humidity (DHT22)
+    float roomTempC = dht.readTemperature();
+    float humidityPct = dht.readHumidity();
+
+    // Check if DHT22 reading failed so JSON never sends NaN to InfluxDB
+    if (isnan(roomTempC) || isnan(humidityPct)) {
+      Serial.println("WARNING: DHT22 sensor not detected! Using fallback values.");
+      roomTempC = 25.0;
+      humidityPct = 55.0;
+    }
+
+    // 3. Simulate the microphone detecting a cough (10% chance every 5 seconds)
+    String currentSymptom = "none";
+    float currentConfidence = 0.0;
+    if (random(100) < 10) { 
+      currentSymptom = "cough";
+      currentConfidence = random(75, 99) / 100.0; // Random confidence between 0.75 and 0.99
+    }
+
+    // 4. Check for the -127.00 error on DS18B20
+    if (tempC == -127.00) {
+      Serial.println("ERROR: DS18B20 Sensor not found! Internal resistor is too weak.");
+    } else {
+      // 5. Create the JSON packet
+      StaticJsonDocument<256> doc;
+      doc["device_id"] = "patient_01";
+      doc["temperature_c"] = tempC;
+      doc["room_temp_c"] = roomTempC;
+      doc["humidity_pct"] = humidityPct;
+      doc["symptom"] = currentSymptom;
+      doc["confidence"] = currentConfidence;
+
+      char jsonString[256];
+      serializeJson(doc, jsonString);
+
+      // 6. Print to Serial Monitor and Publish to Node-RED
+      Serial.print("Sending: ");
+      Serial.println(jsonString);
+      
+      client.publish(mqtt_topic, jsonString);
+    }
+  }
+}

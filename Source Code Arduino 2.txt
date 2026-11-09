@@ -216,8 +216,8 @@
 #include <ArduinoJson.h>
 
 // --- WiFi Credentials ---
-const char* ssid = "Redmi Note 12 Pro 5G";      // CHANGE THIS
-const char* password = "passwordhotspot"; // CHANGE THIS
+const char* ssid = "(WiFi Name)";      // CHANGE THIS
+const char* password = "(WiFi Password)"; // CHANGE THIS
 
 // --- MQTT Credentials ---
 const char* mqtt_server = "va00e289.ala.asia-southeast1.emqxsl.com";
