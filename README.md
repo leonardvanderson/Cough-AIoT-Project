@@ -61,7 +61,7 @@ Data dikirim dari ESP32 ke cloud dalam format JSON 4-*field* berikut:
 - 📁 **1.000+ Records Dataset InfluxDB (CSV):** [Lihat Dataset CSV](https://github.com/leonardvanderson/Cough-AIoT-Project/blob/main/Dataset%20MQTT%20Real%20Time%20influxdata%202026-11-06T08%2049%2053Z.csv)
 - 💾 **Source Code Arduino:** [Lihat Kode ESP32](https://github.com/leonardvanderson/Cough-AIoT-Project/blob/main/Source%20Code%20Arduino%202.txt)
 - 📜 **Flowchart & Pseudocodes:** [Lihat Dokumentasi Algoritma](https://github.com/leonardvanderson/Cough-AIoT-Project/blob/main/Pseudocodes.txt)
-- 🎥 **Video Demo:** [Tonton di Google Drive]([https://drive.google.com/file/d/1uvlVrptck8dT_ZKZyWGNqyluf0FuleyM/view?usp=sharing](https://drive.google.com/file/d/12Xwy_EdF0_ZLHQW8k1ztuyqKJ6aKZRLl/view?usp=sharing))
+- 🎥 **Video Demo:** [Tonton di Google Drive]([[https://drive.google.com/file/d/1uvlVrptck8dT_ZKZyWGNqyluf0FuleyM/view?usp=sharing](https://drive.google.com/file/d/12Xwy_EdF0_ZLHQW8k1ztuyqKJ6aKZRLl/view?usp=sharing)](https://drive.google.com/file/d/12Xwy_EdF0_ZLHQW8k1ztuyqKJ6aKZRLl/view?usp=sharing))
 
 ---
 
