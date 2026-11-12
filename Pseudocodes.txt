@@ -1,741 +1,398 @@
 Pseudocode 
 
-Pseudocode Pengumpulan dan Persiapan Dataset :  
+====================================================================
+1. Pseudocode Pengumpulan dan Persiapan Dataset :  
+====================================================================
 
 START DATASET_PREPARATION 
 
- 
-
 // 1. Inisialisasi Jalur Direktori (Paths) 
-
 SET Path_ESC50_Metadata = "ESC-50/meta/esc50.csv" 
-
 SET Path_ESC50_Audio = "ESC-50/audio" 
-
 SET Path_COUGHVID_Metadata = "public_dataset/metadata_compiled.csv" 
-
 SET Path_COUGHVID_Audio = "public_dataset" 
-
 SET Path_Output = "edge_impulse_dataset" 
 
- 
-
 // 2. Pembuatan Struktur Folder Output (Kelas AI) 
-
 SET Classes = ["cough", "sneeze", "noise"] 
-
 FOR EACH label IN Classes DO 
-
     CREATE_DIRECTORY (Path_Output + "/" + label) 
-
 END FOR 
-
- 
 
 // 3. Fungsi Standarisasi Audio (Format Wajib Edge Impulse) 
-
 FUNCTION Process_Audio (Input_Path, Output_Path) 
-
     TRY 
-
         LOAD Audio FROM Input_Path 
-
         SET Audio_Channels = 1           // Paksa ke format Mono 
-
         SET Audio_Sample_Rate = 16000    // Paksa ke 16 kHz 
-
         SET Audio_Bit_Depth = 16-bit PCM // Format standar WAV tanpa kompresi 
-
          
-
         SAVE Audio TO Output_Path AS ".wav" 
-
         RETURN True 
-
     CATCH Error 
-
         PRINT "Gagal memproses file: " + Input_Path 
-
         RETURN False 
-
     END TRY 
-
 END FUNCTION 
 
- 
 
- 
-
-// TAHAP 1: EKSTRAKSI SNEEZE & NOISE DARI ESC-50 
-
- 
+// TAHAP 1: EKSTRAKSI SNEEZE & NOISE DARI ESC-50 (40 Sneeze + 160 Noise)
 
 PRINT "Memproses Dataset ESC-50..." 
-
 LOAD ESC50_Data FROM Path_ESC50_Metadata 
-
 SET Noise_Categories = ["rain", "keyboard_typing", "mouse_click", "breathing"] 
 
- 
-
 FOR EACH Row IN ESC50_Data DO 
-
     SET File_Name = Row.filename 
-
     SET Category = Row.category 
-
     SET Current_File_Path = Path_ESC50_Audio + "/" + File_Name 
-
      
-
     // Klasifikasi Sneeze (Bersin) 
-
     IF Category == "sneezing" THEN 
-
         Process_Audio(Current_File_Path, Path_Output + "/sneeze/" + File_Name) 
-
          
-
     // Klasifikasi Background Noise 
-
     ELSE IF Category IS IN Noise_Categories THEN 
-
         Process_Audio(Current_File_Path, Path_Output + "/noise/" + File_Name) 
-
     END IF 
-
 END FOR 
 
- 
 
- 
-
-// TAHAP 2: EKSTRAKSI COUGH DARI COUGHVID 
-
- 
+// TAHAP 2: EKSTRAKSI COUGH DARI COUGHVID (200 Sampel Batuk Valid)
 
 PRINT "Memproses Dataset COUGHVID..." 
-
 LOAD COUGHVID_Data FROM Path_COUGHVID_Metadata 
 
- 
-
 // Filter hanya batuk dengan tingkat keyakinan tinggi (confidence >= 0.95) 
-
 SET Valid_Cough_UUIDs = GET UUIDs FROM COUGHVID_Data WHERE cough_detected >= 0.95 
-
 SET Found_Cough_Files = [] 
 
- 
-
 PRINT "Mencari file audio yang cocok di penyimpanan..." 
-
 // Pencarian dinamis di seluruh folder COUGHVID 
-
 FOR EACH File IN Path_COUGHVID_Audio DO 
-
     SET File_UUID = EXTRACT_UUID(File.name) 
-
      
-
     // Jika UUID file ada dalam daftar batuk valid, ambil filenya 
-
     IF File_UUID IS IN Valid_Cough_UUIDs THEN 
-
         ADD File.path TO Found_Cough_Files 
-
          
-
-        // Batasi hingga 200 sampel agar dataset seimbang (Balanced Dataset) 
-
+        // Batasi hingga 200 sampel agar dataset seimbang (Balanced Dataset = 400 Total) 
         IF LENGTH(Found_Cough_Files) >= 200 THEN 
-
             BREAK FOR LOOP 
-
         END IF 
-
     END IF 
-
 END FOR 
 
- 
-
 // Standarisasi dan Simpan File Batuk 
-
 IF LENGTH(Found_Cough_Files) == 0 THEN 
-
     PRINT "ERROR: File audio COUGHVID tidak ditemukan." 
-
 ELSE 
-
     SET Processed_Count = 0 
-
     FOR EACH Input_Path IN Found_Cough_Files DO 
-
+        SET File_UUID = EXTRACT_UUID(Input_Path)
         SET Output_Path = Path_Output + "/cough/" + File_UUID + ".wav" 
-
          
-
         IF Process_Audio(Input_Path, Output_Path) == True THEN 
-
             INCREMENT Processed_Count 
-
         END IF 
-
     END FOR 
-
     PRINT "SUKSES: " + Processed_Count + " file batuk berhasil distandarisasi." 
-
 END IF 
-
- 
 
 END DATASET_PREPARATION 
 
- 
 
-Pseudocode Model Training MFCC Edge Impulse AI :  
+====================================================================
+2. Pseudocode Model Training MFCC Edge Impulse AI :  
+====================================================================
 
 START EDGE_IMPULSE_PIPELINE 
 
- 
-
- 
-
 // 1. INISIALISASI DATASET & PARAMETER INPUT 
-
- 
-
 LOAD_DATASET (Path: "edge_impulse_dataset") 
-
 SET Classes = ["cough", "sneeze", "noise"] 
 
- 
-
 // Pengaturan Sliding Window (Pemotongan Sampel Audio) 
-
 SET Window_Size = 1000 ms     // Model menganalisis audio per 1 detik 
-
 SET Window_Increase = 500 ms  // Overlap 50% untuk memperbanyak data latih 
-
 SET Audio_Sample_Rate = 16000 Hz 
 
- 
-
- 
 
 // 2. BLOK DSP: EKSTRAKSI FITUR MFCC 
-
 // Algoritma MFCC memisahkan frekuensi suara yang menyerupai pendengaran manusia 
-
 FUNCTION Extract_MFCC_Features (Audio_Window) 
-
     SET Frame_Length = 0.02 seconds 
-
     SET Frame_Stride = 0.01 seconds 
-
     SET Num_Filters = 32 
-
     SET Num_Cepstral_Coefficients = 13 
-
     SET FFT_Size = 256 
-
      
-
     // Langkah-langkah kalkulasi MFCC standar 
-
     Spectrogram = COMPUTE_FFT (Audio_Window, FFT_Size) 
-
     Mel_Scale = APPLY_MEL_FILTERBANK (Spectrogram, Num_Filters) 
-
     Cepstrum = APPLY_DCT (Mel_Scale, Num_Cepstral_Coefficients) // Discrete Cosine Transform 
-
      
-
     RETURN Cepstrum AS Features_Array 
-
 END FUNCTION 
 
- 
-
 PRINT "Mengekstrak fitur MFCC untuk seluruh dataset..." 
-
 SET Processed_Features = [] 
 
- 
-
 FOR EACH Audio_Sample IN Dataset DO 
-
     Feature = Extract_MFCC_Features (Audio_Sample) 
-
     ADD Feature TO Processed_Features 
-
 END FOR 
 
- 
-
- 
 
 // 3. BLOK ML: ARSITEKTUR NEURAL NETWORK (1D CNN) 
-
- 
-
 CREATE Neural_Network_Model: 
-
     // Input menerima array matriks dari MFCC 
-
     INPUT_LAYER (Shape: Ukuran Features_Array) 
-
      
-
     // Hidden Layers menggunakan Convolutional 1D (sangat baik untuk pola audio time-series) 
-
     ADD Conv1D_Layer (Filters: 8, Kernel_Size: 3, Activation: "relu") 
-
     ADD MaxPooling1D_Layer (Pool_Size: 2) 
-
     ADD Dropout_Layer (Rate: 0.25) // Mencegah overfitting (model menghafal data) 
-
      
-
     ADD Flatten_Layer () 
-
     ADD Dense_Layer (Neurons: 32, Activation: "relu") 
-
      
-
     // Output Layer mengklasifikasikan ke dalam 3 jenis suara 
-
     ADD Output_Layer (Neurons: LENGTH(Classes), Activation: "softmax") 
 
- 
-
- 
 
 // 4. PROSES PELATIHAN MODEL (TRAINING) 
-
- 
-
 SET Training_Parameters: 
-
     Epochs = 100               // Jumlah siklus pembelajaran 
-
     Learning_Rate = 0.005 
-
     Validation_Split = 0.20    // Gunakan 20% data untuk menguji model selama training 
 
- 
-
 PRINT "Memulai pelatihan Jaringan Saraf Tiruan..." 
-
 TRAIN Neural_Network_Model WITH (Data: Processed_Features, Params: Training_Parameters) 
 
- 
-
- 
 
 // 5. EVALUASI DAN DEPLOYMENT (KUANTISASI) 
-
- 
-
 SET Model_Accuracy = GET_VALIDATION_ACCURACY () 
-
 SET Model_Loss = GET_VALIDATION_LOSS () 
-
- 
 
 PRINT "Akurasi Akhir Model: " + Model_Accuracy + "%" 
 
- 
-
 IF Model_Accuracy >= 85% THEN 
-
     PRINT "Akurasi memenuhi standar, memproses Deployment..." 
-
      
-
     // Kuantisasi (Quantization) mengubah format bobot (weights) model dari Float32 ke INT8 
-
     // Ini krusial agar model AI muat di RAM ESP32 yang kecil dan berjalan cepat 
-
     Optimized_Model = QUANTIZE_MODEL (Neural_Network_Model, Target_Format: "INT8") 
-
      
-
     PRINT "Membangun Firmware C++..." 
-
     Edge_Impulse_Library = BUILD_ARDUINO_LIBRARY (Optimized_Model) 
-
     SAVE Edge_Impulse_Library 
-
      
-
     PRINT "Model Edge AI siap ditanamkan (Flash) ke perangkat IoT!" 
-
 ELSE 
-
     PRINT "Akurasi kurang baik. Saran: Periksa grafik Data Explorer untuk mencari data noise yang salah label." 
-
 END IF 
-
- 
 
 END EDGE_IMPULSE_PIPELINE 
  
-Pseudocode Arduino :  
+
+====================================================================
+3. Pseudocode Arduino (ESP32 + DS18B20 + DHT22 + INMP441 / Edge AI) :  
+====================================================================
 
 START ESP32_SENSOR_NODE_V2 
 
-  
-
     // 1. INISIALISASI VARIABEL & KONFIGURASI PIN 
-
     SET WiFi_SSID = "[wifi_yang_digunakan]", WiFi_Password = "[wifi_password]" 
-
     SET MQTT_Broker = "va00e289.ala.asia-southeast1.emqxsl.com", MQTT_Port = 8883 
-
     SET MQTT_Topic = "hospital/room1/patient_sensor", Data_Interval = 5000 ms 
-
     SET DS18B20_Pin = 4 (GPIO 4) 
-
     SET DHT22_Pin = 5 (GPIO 5), DHT_Type = DHT22 
-
-  
-
-    // [PENAMBAHAN BARU ASSIGNMENT 2] 
-
-  
+    SET INMP441_I2S_Pins = {SCK: GPIO 14, WS: GPIO 15, SD: GPIO 32}
 
     // 2. FUNGSI SETUP 
-
     FUNCTION Setup() 
-
         START 
-
             Serial_Communication(115200) 
-
             ENABLE Internal_PullUp_Resistor ON DS18B20_Pin 
-
             AND START DS18B20_Sensor 
-
             ENABLE Internal_PullUp_Resistor ON DHT22_Pin 
-
             AND START DHT22_Sensor 
-
-  
-
-            // [BARU] 
+            INITIALIZE I2S_Audio_Bus ON INMP441_I2S_Pins (16000 Hz, 16-bit Mono)
 
             CONNECT TO WiFi(WiFi_SSID, WiFi_Password) 
-
             SET MQTT_Client TO Secure_TLS_Mode(setInsecure) 
-
             AND SET Server(MQTT_Broker, 8883) 
-
         END 
-
     END FUNCTION 
 
-  
-
     // 3. FUNGSI LOOP UTAMA (SETIAP 5 DETIK) 
-
     FUNCTION Loop() 
-
         IF NOT MQTT_Client.Connected() THEN 
-
             Reconnect_MQTT() 
-
         END IF 
-
-  
 
         MQTT_Client.Loop() 
 
-  
-
-        IF (Time_Now - Last_Message_Time) ≥ Data_Interval THEN 
-
+        IF (Time_Now - Last_Message_Time) >= Data_Interval THEN 
             UPDATE Last_Message_Time = Time_Now 
 
-  
-
             // A. Baca Suhu Tubuh Pasien (DS18B20) 
-
             REQUEST Temperature FROM DS18B20_Sensor 
-
             SET Temp_C = READ Temperature (Celcius) 
 
-  
-
             // B. Baca Suhu & Kelembapan Kamar (DHT22) 
-
-            // [PENAMBAHAN BARU ASSIGNMENT 2] 
-
             SET Room_Temp_C = DHT22.readTemperature() 
-
             SET Humidity_Pct = DHT22.readHumidity() 
 
-  
-
             IF IS_NAN(Room_Temp_C) OR IS_NAN(Humidity_Pct) THEN 
-
                 PRINT "WARNING: DHT22 sensor not detected! Using fallback values." 
-
                 SET Room_Temp_C = 25.0, Humidity_Pct = 55.0 
-
             END IF 
 
-  
-
-            // C. Deteksi / Simulasi Gejala Suara Pernapasan (INMP441 / AI) 
-
+            // C. Deteksi Gejala Suara Pernapasan (INMP441 Edge Impulse / Mode Simulasi) 
             SET Current_Symptom = "none", Current_Confidence = 0.0 
 
-  
-
-            IF Random(0, 100) < 10 THEN 
-
-                SET Current_Symptom = "cough", Current_Confidence = Random(0.75, 0.99) 
-
-            END IF 
-
-  
+            IF Edge_AI_Microphone_Mode == ACTIVE THEN
+                Audio_Buffer = RECORD_I2S_AUDIO (1000 ms)
+                AI_Result = RUN_EDGE_IMPULSE_CLASSIFIER (Audio_Buffer)
+                IF AI_Result.top_class IN ["cough", "sneeze"] AND AI_Result.confidence >= 0.75 THEN
+                    SET Current_Symptom = AI_Result.top_class
+                    SET Current_Confidence = AI_Result.confidence
+                END IF
+            ELSE // Mode Simulasi Pengujian Akuisisi Data Kontinu
+                IF Random(0, 100) < 10 THEN 
+                    SET Current_Symptom = "cough", Current_Confidence = Random(0.75, 0.99) 
+                END IF 
+            END IF
 
             // D. Validasi & Publikasi Paket JSON 6-Variabel ke Cloud 
-
             IF Temp_C == -127.00 THEN 
-
                 PRINT "ERROR: DS18B20 Sensor not found!" 
-
             ELSE 
-
                 CREATE JSON_Payload (256 bytes): 
-
                     "device_id": "patient_01", 
-
                     "temperature_c": Temp_C, 
-
-                    "room_temp_c": Room_Temp_C, // [VARIABEL BARU] 
-
-                    "humidity_pct": Humidity_Pct, // [VARIABEL BARU] 
-
+                    "room_temp_c": Room_Temp_C, 
+                    "humidity_pct": Humidity_Pct, 
                     "symptom": Current_Symptom, 
-
                     "confidence": Current_Confidence 
 
-  
-
                 PUBLISH JSON_Payload TO MQTT_Topic 
-
             END IF 
-
         END IF 
-
     END FUNCTION 
-
-  
 
 END ESP32_SENSOR_NODE_V2 
 
- 
 
- 
-
- 
+====================================================================
+4. Environment Variables & Pseudocode RED NODE :  
+====================================================================
 
 Environment Variables (Konfigurasi Node-RED): 
-
- 
-
-MQTT Broker: mqtts://va00e289.ala.asia-southeast1.emqxsl.com:8883 (EMQX Cloud, TLS enabled) 
-
-MQTT Topic: hospital/room1/patient_sensor 
-
-InfluxDB URL: https://us-east-1-1.aws.cloud2.influxdata.com 
-
-InfluxDB Organization: 35a50f0f8db3c242 
-
-InfluxDB Bucket: patient_data 
-
- 
-
-Pseudocode RED NODE :  
+- MQTT Broker: mqtts://va00e289.ala.asia-southeast1.emqxsl.com:8883 (EMQX Cloud, TLS enabled) 
+- MQTT Topic: hospital/room1/patient_sensor 
+- InfluxDB URL: https://us-east-1-1.aws.cloud2.influxdata.com 
+- InfluxDB Organization: 35a50f0f8db3c242 
+- InfluxDB Bucket: patient_data 
 
 START SYSTEM 
 
- 
-
 // 1. Inisialisasi Koneksi (Environment) 
-
 CONNECT to MQTT_Broker ("va00e289...emqxsl.com", port 8883) 
-
 CONNECT to InfluxDB_Cloud ("us-east-1-1.aws.cloud2.influxdata.com", bucket "patient_data") 
 
- 
 
- 
-
-// THREAD 1: PENERIMAAN & PEMROSESAN DATA LIVE 
-
- 
+// THREAD 1: PENERIMAAN & PEMROSESAN DATA LIVE (SAAT PAYLOAD MQTT MASUK)
 
 ON RECEIVE Message FROM MQTT_Topic ("hospital/room1/patient_sensor") DO 
-
-    PARSE Message AS JSON payload (temperature_c, symptom, confidence) 
-
+    PARSE Message AS JSON payload (temperature_c, room_temp_c, humidity_pct, symptom, confidence) 
      
-
-    // Alur A: Cek Demam (Aktuator 1) 
-
+    // Alur A: Rule 1 - Cek Demam Pasien (Aktuator 1: Body Heat Text) 
     IF payload.temperature_c >= 37.5 THEN 
-
-        SET UI_Body_Heat_Text = "Suhu pasien [temperature]°C. [Link Beli Paracetamol]" 
-
+        SET UI_Body_Heat_Text = "⚠️ Suhu pasien [temperature_c]°C. [Link Beli Paracetamol]" 
     ELSE 
-
-        SET UI_Body_Heat_Text = "Suhu normal ([temperature]°C)" 
-
+        SET UI_Body_Heat_Text = "✅ Suhu normal ([temperature_c]°C)" 
     END IF 
 
+    // Alur B: Rule 2 - Cek Kualitas Udara Kamar DHT22 (Aktuator 2: Room Environment Text)
+    IF payload.humidity_pct >= 70 THEN
+        SET UI_Room_Env_Text = "⚠️ Udara Terlalu Lembap ([humidity_pct]% | [room_temp_c]°C). Memicu bersin/jamur! [Link Nyalakan Dehumidifier/AC]"
+    ELSE IF payload.humidity_pct <= 40 THEN
+        SET UI_Room_Env_Text = "⚠️ Udara Terlalu Kering ([humidity_pct]% | [room_temp_c]°C). Memicu batuk kering! [Link Nyalakan Humidifier]"
+    ELSE IF payload.room_temp_c < 20 THEN
+        SET UI_Room_Env_Text = "🥶 Kamar Terlalu Dingin ([room_temp_c]°C | [humidity_pct]%). Naikkan suhu AC ruangan."
+    ELSE
+        SET UI_Room_Env_Text = "✅ Kamar Ideal ([room_temp_c]°C | Kelembapan: [humidity_pct]%)"
+    END IF
      
-
-    // Alur B: Update Grafik Suhu Live 
-
+    // Alur C: Update Grafik Suhu Live 
     UPDATE UI_Chart ("Live Temperature History") WITH payload.temperature_c 
-
      
-
-    // Alur C: Simpan ke Database 
-
-    FORMAT payload AS InfluxDB_Data_Point 
-
+    // Alur D: Simpan Multi-Field ke Database InfluxDB Cloud 
+    FORMAT payload AS InfluxDB_Data_Point:
+        fields = {temperature: temperature_c, room_temperature: room_temp_c, humidity: humidity_pct, confidence: confidence}
+        tags   = {symptom: symptom}
     WRITE InfluxDB_Data_Point TO InfluxDB_Cloud (measurement: "vitals") 
 
- 
+    // Alur E: Rule 3 - Triase Gejala Pernapasan Harian (Aktuator 1: Symptom Text)
+    QUERY InfluxDB_Cloud: 
+        "Hitung jumlah 'cough' dan 'sneeze' hari ini (start: today()) dengan filter _field == 'temperature' (mencegah duplikasi 4x)" 
+     
+    IF total_cough >= 5 THEN 
+        ADD TO Alerts: "⚠️ In-sick Cough ([jumlah]x batuk hari ini). [Link Beli Obat Batuk]" 
+    ELSE IF total_cough > 0 THEN 
+        ADD TO Alerts: "🤧 Occurrence Cough ([jumlah]/5 menuju batas sakit)." 
+    END IF 
+
+    IF total_sneeze >= 5 THEN 
+        ADD TO Alerts: "⚠️ In-sick Sneeze ([jumlah]x bersin hari ini). [Link Beli Obat Flu]" 
+    ELSE IF total_sneeze > 0 THEN 
+        ADD TO Alerts: "🤧 Occurrence Sneeze ([jumlah]/5 menuju batas sakit)." 
+    END IF 
+
+    IF Alerts IS EMPTY THEN
+        SET UI_Text ("Symptoms") = "✅ Not-sick: Tidak ada gejala pernapasan."
+    ELSE
+        DISPLAY Alerts ON UI_Text ("Symptoms") 
+    END IF
 
 END ON RECEIVE 
 
- 
 
- 
-
-// THREAD 2: ANALISIS GEJALA HARIAN & AKTUALISASI 
-
- 
+// THREAD 2: RULE 4 - ANALISIS HISTORIS & ESKALASI 3 HARI (Aktuator 3) 
 
 EVERY 10 SECONDS DO 
-
-    // Cek Batuk dan Bersin Hari Ini 
-
+    // Cek Durasi Sakit dari Seluruh Riwayat Data
     QUERY InfluxDB_Cloud: 
-
-        "Hitung jumlah 'cough' dan 'sneeze' hari ini" 
-
-     
-
-    IF total_cough >= 5 THEN 
-
-        ADD TO Alerts: "In-sick Cough ([jumlah]x). [Link Beli Obat Batuk]" 
-
-    ELSE IF total_cough > 0 THEN 
-
-        ADD TO Alerts: "Occurrence Cough ([jumlah]/5 menuju batas sakit)." 
-
-    END IF 
-
- 
-
-    IF total_sneeze >= 5 THEN 
-
-        ADD TO Alerts: "In-sick Sneeze ([jumlah]x). [Link Beli Obat Flu]" 
-
-    ELSE IF total_sneeze > 0 THEN 
-
-        ADD TO Alerts: "Occurrence Sneeze ([jumlah]/5 menuju batas sakit)." 
-
-    END IF 
-
- 
-
-    DISPLAY Alerts ON UI_Text ("Symptoms") 
-
- 
-
-END EVERY 
-
- 
-
- 
-
-// THREAD 3: ANALISIS HISTORIS & ESKALASI 3 HARI (Aktuator 2) 
-
- 
-
-EVERY 10 SECONDS DO 
-
-    // Cek Durasi Sakit 
-
-    QUERY InfluxDB_Cloud: 
-
-        "Ambil seluruh data dengan _field == 'confidence'" 
-
-        "Hitung selisih waktu antara data terakhir (maxTime) dan data pertama (minTime)" 
-
+        "Ambil seluruh data pada measurement 'vitals' dengan _field == 'confidence'" 
+        "Hitung selisih waktu antara data terakhir (maxTime) dan data pertama (minTime) menggunakan fungsi reduce()" 
         "Kembalikan sebagai duration_seconds" 
-
      
-
-    // Logika Eskalasi 
-
-    IF duration_seconds >= 259200 THEN  // 259.200 detik = 3 hari 
-
-        SET UI_Text ("URGENT ESCALATION") = "Gejala berlanjut lebih dari 3 hari! Segera hubungi [Link RSUPN] atau [Link Chat Dokter]" 
-
+    // Logika Eskalasi (259.200 detik = 3 hari riil, atau >= 180 detik pada mode uji cepat)
+    IF duration_seconds >= 259200 THEN  
+        SET UI_Text ("URGENT ESCALATION") = "Gejala berlanjut lebih dari 3 hari! Segera hubungi [Link RSUPN Dr. Cipto Mangunkusumo] atau [Link Chat Dokter]" 
     ELSE 
-
-        SET UI_Text ("URGENT ESCALATION") = "" // Kosongkan jika belum 3 hari 
-
+        SET UI_Text ("URGENT ESCALATION") = "" // Kosongkan jika belum melewati ambang batas 
     END IF 
-
- 
 
 END EVERY 
 
- 
 
- 
-
-// THREAD 4: PEMBARUAN GRAFIK HISTORIS & TABEL LOG 
-
- 
+// THREAD 3: PEMBARUAN GRAFIK HISTORIS HARIAN & TABEL LOG MENTAH 
 
 EVERY 10 SECONDS DO 
-
     // Update Grafik Batang Harian 
-
     QUERY InfluxDB_Cloud: 
-
-        "Hitung total 'cough' dan 'sneeze' per hari selama 30 hari terakhir dengan zona waktu Asia/Jakarta" 
-
+        "Hitung total 'cough' dan 'sneeze' per hari (aggregateWindow 1d) selama 30 hari terakhir pada _field == 'temperature' dengan zona waktu Asia/Jakarta" 
     UPDATE UI_Chart ("Daily Cough & Sneeze Count") WITH query_results 
-
      
-
-    // Update Tabel Log Mentah 
-
+    // Update Tabel Log Mentah (Pivot 4 Fields)
     QUERY InfluxDB_Cloud: 
-
-        "Ambil 50 data terakhir, hapus kolom metadata (_start, _stop, dll)" 
-
+        "Ambil data 1 hari terakhir, gabungkan kolom temperature, room_temperature, humidity, dan confidence dengan fungsi pivot(), urutkan terbaru, ambil 50 data terakhir" 
     UPDATE UI_Table ("Raw Patient Log") WITH query_results 
 
- 
-
 END EVERY 
 
- 
-
-END SYSTEM 
-
- 
+END SYSTEM
